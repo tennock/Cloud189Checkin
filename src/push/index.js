@@ -8,6 +8,7 @@ const pushPlus = require("./pushPlus");
 const wpush = require("./wpush");
 const bark = require("./bark");
 const showDoc = require("./showDoc");
+const feishu = require("./feishu");
 
 const logger = log4js.getLogger("push");
 logger.addContext("user", "push");
@@ -35,6 +36,38 @@ const pushServerChan = (title, desp) => {
         logger.error(`ServerChan推送失败:${JSON.stringify(err)}`);
       }
     });
+};
+
+// 飞书自建应用私聊推送（参考 Zeso 交付）：FEISHU_APP_ID/FEISHU_APP_SECRET/FEISHU_RECEIVE_EMAIL 三者齐全才发
+const pushFeishu = async (title, desp) => {
+  if (!(feishu.appId && feishu.appSecret && feishu.receiveEmail)) {
+    return;
+  }
+  try {
+    const tokenRes = await superagent
+      .post("https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal")
+      .send({ app_id: feishu.appId, app_secret: feishu.appSecret });
+    const token = tokenRes.body?.tenant_access_token;
+    if (!token) {
+      logger.error(`飞书推送失败:获取 tenant_access_token 失败:${JSON.stringify(tokenRes.body)}`);
+      return;
+    }
+    const res = await superagent
+      .post("https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=email")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        receive_id: feishu.receiveEmail,
+        msg_type: "text",
+        content: JSON.stringify({ text: `${title}\n\n${desp}` }),
+      });
+    if (res.body?.code === 0) {
+      logger.info("飞书推送成功");
+    } else {
+      logger.error(`飞书推送失败:${JSON.stringify(res.body)}`);
+    }
+  } catch (err) {
+    logger.error(`飞书推送失败:${JSON.stringify(err)}`);
+  }
 };
 
 const pushTelegramBot = (title, desp) => {
@@ -216,7 +249,8 @@ const pushShowDoc = (title, desp) => {
 };
 
 const push = (title, desp) => {
-  pushServerChan(title, desp);
+  // 方糖（ServerChan）通知已停用；需要时取消下一行注释即可
+  // pushServerChan(title, desp);
   pushTelegramBot(title, desp);
   pushWecomBot(title, desp);
   pushWxPusher(title, desp);
@@ -224,6 +258,7 @@ const push = (title, desp) => {
   pushWPush(title, desp);
   pushBark(title, desp);
   pushShowDoc(title, desp);
+  pushFeishu(title, desp);
 };
 
 module.exports = push;

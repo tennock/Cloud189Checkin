@@ -48,8 +48,17 @@
 
 ### Server 酱
 
+> 默认已停用（`src/push/index.js` 中 `pushServerChan` 调用已注释），需要时取消注释即可。
+
 为了考虑到不同客户端兼容性,采用了 Server 酱,只需多配置下 SENDKEY
 ![](https://cdn.jsdelivr.net/gh/wes-lin/Cloud189Checkin/image/push.png)就行,Server 酱的配置和 sendkey 的获取可参看[Server 酱官网](https://sct.ftqq.com/)
+
+### 飞书推送
+
+- `FEISHU_APP_ID ` _飞书自建应用 App ID_
+- `FEISHU_APP_SECRET ` _飞书自建应用 App Secret_
+- `FEISHU_RECEIVE_EMAIL ` _接收推送的飞书账号邮箱_
+- 采用自建应用私聊模式（无需建群）：应用需开通机器人能力与发消息权限，机器人会直接私聊发送签到结果到 `FEISHU_RECEIVE_EMAIL` 对应账号
 
 ### TelegramBot 推送
 
